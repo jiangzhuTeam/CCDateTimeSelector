@@ -1,4 +1,4 @@
-import { _decorator, Component, instantiate, Node, Prefab, Label } from "cc";
+import { _decorator, Component, instantiate, Node, Prefab, Label, isValid } from "cc";
 import { DateTimePicker, DateTimePickerResult } from "./DateTimePicker";
 
 const { ccclass, property, menu } = _decorator;
@@ -35,16 +35,46 @@ export class DateTimePickerTest extends Component {
     /** 记住上次选择的日期 */
     private _lastDate: Date = new Date();
 
-    start() {
-        const btn = this.triggerBtn || this.node;
-        btn.on(Node.EventType.TOUCH_END, this.openPicker, this);
+    /** 当前已绑定点击事件的节点 */
+    private _eventTarget: Node | null = null;
 
+    /** 是否已绑定点击事件 */
+    private _isBound: boolean = false;
+
+    onEnable() {
+        this._bindTriggerEvent();
+    }
+
+    start() {
         if (this.openOnStart) this.openPicker();
     }
 
+    onDisable() {
+        this._unbindTriggerEvent();
+    }
+
     onDestroy() {
-        const btn = this.triggerBtn || this.node;
-        btn.off(Node.EventType.TOUCH_END, this.openPicker, this);
+        this._unbindTriggerEvent();
+    }
+
+    /** 绑定触发事件 */
+    private _bindTriggerEvent(): void {
+        const target = (this.triggerBtn && isValid(this.triggerBtn)) ? this.triggerBtn : this.node;
+        if (!target || !isValid(target) || this._isBound && this._eventTarget === target) return;
+
+        this._unbindTriggerEvent();
+        target.on(Node.EventType.TOUCH_END, this.openPicker, this);
+        this._eventTarget = target;
+        this._isBound = true;
+    }
+
+    /** 解绑触发事件（销毁阶段需先判空和判有效） */
+    private _unbindTriggerEvent(): void {
+        if (this._isBound && this._eventTarget && isValid(this._eventTarget)) {
+            this._eventTarget.off(Node.EventType.TOUCH_END, this.openPicker, this);
+        }
+        this._eventTarget = null;
+        this._isBound = false;
     }
 
     /** 弹出日期时间选择器 */
@@ -76,12 +106,12 @@ export class DateTimePickerTest extends Component {
             console.info("[DateTimePickerTest] 确认选择:", r.dateString);
             console.info("[DateTimePickerTest] 详细:", r);
             if (this.resultLabel) this.resultLabel.string = r.dateString;
-            node.destroy();
+            if (isValid(node)) node.destroy();
         });
 
         node.on("cancel", () => {
-            console.log("[DateTimePickerTest] 取消选择");
-            node.destroy();
+            console.info("[DateTimePickerTest] 取消选择");
+            if (isValid(node)) node.destroy();
         });
 
         picker.show();

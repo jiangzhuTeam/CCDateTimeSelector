@@ -5,6 +5,25 @@ import {
 
 const { ccclass, property, menu } = _decorator;
 
+// 滚轮手感参数（统一在这里调节）
+// 说明：
+// 1. 越短越“干脆”，越长越“柔和”
+// 2. 推荐优先调 WHEEL_SNAP_DURATION / WHEEL_SNAP_UNLOCK_DURATION
+// 3. 再调 WHEEL_SCROLL_BRAKE 影响“滑行停止”速度
+const WHEEL_SCROLL_BRAKE = 0.82;
+// ScrollView 回弹耗时（拖到边界时的回弹速度）
+const WHEEL_BOUNCE_DURATION = 0.18;
+// 代码主动调用 setIndex 时的滚动时长
+const WHEEL_SET_INDEX_DURATION = 0.2;
+// setIndex 动画后，解除 _snapping 锁的时间
+const WHEEL_SET_INDEX_UNLOCK_DURATION = 0.22;
+// setIndex 无动画时，最短锁定时间（用于等一帧刷新）
+const WHEEL_SET_INDEX_UNLOCK_DURATION_NO_ANIM = 0.01;
+// 手指抬起后，吸附到最近项的动画时长
+const WHEEL_SNAP_DURATION = 0.12;
+// 吸附动画后，解除 _snapping 锁的时间
+const WHEEL_SNAP_UNLOCK_DURATION = 0.14;
+
 /**
  * 单列滚轮选择器（iOS 风格）
  *
@@ -92,9 +111,10 @@ export class WheelColumn extends Component {
         if (count === 0 || !this._scrollView) return;
         index = Math.max(0, Math.min(count - 1, index));
         this._index = index;
+        // 进入程序化滚动阶段，避免触发 _onScrollEnded 的二次吸附
         this._snapping = true;
-        this._scrollView.scrollToOffset(new Vec2(0, index * this.itemHeight), animated ? 0.2 : 0);
-        this.scheduleOnce(() => { this._snapping = false; this._updateVisual(); }, animated ? 0.22 : 0.01);
+        this._scrollView.scrollToOffset(new Vec2(0, index * this.itemHeight), animated ? WHEEL_SET_INDEX_DURATION : 0);
+        this.scheduleOnce(() => { this._snapping = false; this._updateVisual(); }, animated ? WHEEL_SET_INDEX_UNLOCK_DURATION : WHEEL_SET_INDEX_UNLOCK_DURATION_NO_ANIM);
         this._updateVisual();
     }
 
@@ -160,9 +180,9 @@ export class WheelColumn extends Component {
         scroll.horizontal = false;
         scroll.vertical = true;
         scroll.inertia = true;
-        scroll.brake = 0.72;
+        scroll.brake = WHEEL_SCROLL_BRAKE;
         scroll.elastic = true;
-        scroll.bounceDuration = 0.18;
+        scroll.bounceDuration = WHEEL_BOUNCE_DURATION;
         this._scrollView = scroll;
 
         scroll.node.on(ScrollView.EventType.SCROLLING, this._onScrolling, this);
@@ -226,12 +246,14 @@ export class WheelColumn extends Component {
         const count = this._items.length;
         if (count === 0 || !this._scrollView) return;
         const off = this._scrollView.getScrollOffset();
+        // 根据当前偏移计算最近索引
         let idx = Math.round(Math.abs(off.y) / this.itemHeight);
         idx = Math.max(0, Math.min(count - 1, idx));
 
+        // 执行一次短动画吸附，手感更接近 iOS 滚轮
         this._snapping = true;
-        this._scrollView.scrollToOffset(new Vec2(0, idx * this.itemHeight), 0.12);
-        this.scheduleOnce(() => { this._snapping = false; this._updateVisual(); }, 0.14);
+        this._scrollView.scrollToOffset(new Vec2(0, idx * this.itemHeight), WHEEL_SNAP_DURATION);
+        this.scheduleOnce(() => { this._snapping = false; this._updateVisual(); }, WHEEL_SNAP_UNLOCK_DURATION);
 
         const changed = idx !== this._index;
         this._index = idx;
