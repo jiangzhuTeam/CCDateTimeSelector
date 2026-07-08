@@ -746,7 +746,7 @@
     "resultLabel": {
       "__id__": 15
     },
-    "showTime": false,
+    "showTime": true,
     "openOnStart": false,
     "_id": "01krWbyixHEIAEFWLnLGm2"
   },
