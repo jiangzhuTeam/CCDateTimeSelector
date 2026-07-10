@@ -16,6 +16,10 @@
 
 在线体验组件效果：https://lively-frost-60a2.jiangzhu7230581.workers.dev/
 
+## 仓库地址
+
+https://github.com/jiangzhuTeam/CCDateTimeSelector.git
+
 ## 📋 环境要求
 
 - Cocos Creator 3.8.8 或更高版本
