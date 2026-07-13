@@ -361,7 +361,8 @@ picker.panelWidth = 690;
 
 ## 📮 联系方式
 
-如有问题或建议，欢迎提交 Issue。
+如有问题或建议，欢迎提交 Issue或扫码联系。
+![alt text](a36d32a1662f6b80ea6c85961af2d3d9.png)
 
 ## 🙏 致谢
 
